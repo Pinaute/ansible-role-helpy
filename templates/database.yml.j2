@@ -1,0 +1,22 @@
+ default: &default
+  adapter: postgresql
+  encoding: unicode
+  # For details on connection pooling, see rails configuration guide
+  # http://guides.rubyonrails.org/configuring.html#database-pooling
+  pool: 5
+
+development:
+  <<: *default
+  database: helpy_development
+  port: 5432
+  host: localhost
+
+test:
+  <<: *default
+  database: helpy_test
+
+production:
+  <<: *default
+  database: {{ postgres.dbname }}
+  username: {{ postgres.username }}
+  password: {{ postgres.password }}

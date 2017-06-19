@@ -1,0 +1,26 @@
+---
+- name: Update Debian and install dependencies
+  package:
+    update_cache: yes
+    name:
+      - git-core
+      - imagemagick
+      - postgresql
+      - postgresql-contrib
+      - python-psycopg2
+      - libpq-dev 
+      - curl
+      - build-essential
+      - zlib1g-dev
+      - libssl-dev
+      - libreadline-dev
+      - libyaml-dev
+      - libsqlite3-dev
+      - sqlite3
+      - libcurl4-openssl-dev
+      - libxml2-dev
+      - libxslt1-dev
+      - python-software-properties
+      - nodejs
+      - nginx
+

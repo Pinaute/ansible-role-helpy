@@ -1,0 +1,59 @@
+---
+- include: ./receive_key.yml
+
+- name: Create rails user
+  user: 
+    name: rails
+    password: "{{ rvm.mypassword | password_hash('sha512') }}"
+    shell: /bin/bash
+
+
+- name: Create rails group
+  group: 
+    name: rails
+    
+- name: Add rails to sudo
+  user:
+    name: rails
+    groups: sudo
+    append: yes    
+    
+- name: Downloading RVM installer
+  get_url:
+    url: "{{rvm.url}}"
+    dest: "{{rvm.temp_installer_path}}"
+
+- name: Set executable RVM installer
+  file:
+    path: "{{rvm.temp_installer_path}}"
+    mode: 0755
+
+- name: Installing RVM
+  command: "{{rvm.temp_installer_path}} --path {{rvm.root}} stable"
+
+- name: Removing RVM installer
+  file:
+    path: "{{rvm.temp_installer_path}}"
+    state: absent 
+
+- name: Setting RVM autolibs on
+  command: "{{rvm.root}}/bin/rvm autolibs 3"
+  
+- name: Add rvm to bashrc
+  lineinfile: 
+    path: /home/rails/.bashrc 
+    line: '[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"'
+    
+- name: Source bashrc
+  become_user: rails   
+  shell: source /home/rails/.bashrc
+  args:
+     executable: /bin/bash
+     
+- name: Dir permissions
+  file: 
+    dest: "{{rvm.root}}"
+    state: directory
+    owner: rails
+    group: rails
+    recurse: yes 

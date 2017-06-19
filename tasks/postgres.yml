@@ -1,0 +1,26 @@
+---
+- name: Create postgresql helpy db
+  become: yes
+  become_user: postgres
+  postgresql_db: 
+    name: "{{postgres.dbname}}"
+    encoding: 'UTF-8'
+
+- name: Create rails postgresql user
+  become: yes
+  become_user: postgres
+  postgresql_user: 
+    db: "{{postgres.dbname}}"
+    name: "{{postgres.username}}"
+    password: "{{postgres.password}}"
+    priv: ALL
+    
+- name: Set to {{ postgres.username }} superuseraccount to import the schema correctly
+  become: yes
+  become_user: postgres
+  shell: 'psql -c ''ALTER USER {{postgres.username}} WITH SUPERUSER;'''
+  
+- name: Revoke superuser from {{postgres.username}}
+  become: yes
+  become_user: postgres
+  shell: 'psql -c ''ALTER USER {{postgres.username}} WITH NOSUPERUSER;'''

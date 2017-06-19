@@ -1,0 +1,6 @@
+---
+- name: Setting default Ruby version
+  shell: "source {{rvm.init_script}} && rvm use {{rvm.default_ruby_version}} --default executable=/bin/bash"
+  register: rvm_select_ruby_version
+  ignore_errors: True
+  changed_when: False 

@@ -1,0 +1,20 @@
+---
+- name: Add Passenger apt key.
+  apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: 561F9B9CAC40B2F7
+
+- name: Add apt HTTPS capabilities.
+  apt: 
+    name: apt-transport-https
+
+- name: Add phusion-passenger apt repository
+  apt_repository: 
+    repo: "deb https://oss-binaries.phusionpassenger.com/apt/passenger jessie main"
+    update_cache: yes
+
+- name: Install Passenger
+  package:
+    name: 
+    - passenger
+    - nginx-extras

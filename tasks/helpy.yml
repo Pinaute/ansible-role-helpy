@@ -1,0 +1,117 @@
+---
+- name: Check if secrets.yml exists
+  stat: path=/home/rails/helpy/config/secrets.yml
+  register: secrets
+
+- name: Copy icinga web config over to server
+  copy: 
+    src: files/
+    dest: /home/rails/.rvm/gems/
+    owner: rails
+    group: rails
+   
+- name: Use ruby-2.2.1
+  become_user: rails
+  command: /bin/bash --login -c "rvm use ruby-2.2.1"
+  environment:
+    GEM_HOME: /home/rails/.rvm/gems/ruby-2.2.1
+    IRBRC: /home/rails/.rvm/rubies/ruby-2.2.1/.irbrc
+    MY_RUBY_HOME: /home/rails/.rvm/rubies/ruby-2.2.1
+    PATH: /home/rails/.rvm/gems/ruby-2.2.1/bin:/home/rails/.rvm/gems/ruby-2.2.1@global/bin:/home/rails/.rvm/rubies/ruby-2.2.1/bin:/home/rails/.rvm/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
+    GEM_PATH: /home/rails/.rvm/gems/ruby-2.2.1:/home/rails/.rvm/gems/ruby-2.2.1@global
+    RUBY_VERSION: ruby-2.2.1
+    
+- name: Install Bundler
+  become_user: rails
+  command: /home/rails/.rvm/rubies/ruby-2.2.1/bin/gem install bundler
+  environment:
+    GEM_HOME: /home/rails/.rvm/gems/ruby-2.2.1
+    IRBRC: /home/rails/.rvm/rubies/ruby-2.2.1/.irbrc
+    MY_RUBY_HOME: /home/rails/.rvm/rubies/ruby-2.2.1
+    PATH: /home/rails/.rvm/gems/ruby-2.2.1/bin:/home/rails/.rvm/gems/ruby-2.2.1@global/bin:/home/rails/.rvm/rubies/ruby-2.2.1/bin:/home/rails/.rvm/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
+    GEM_PATH: /home/rails/.rvm/gems/ruby-2.2.1:/home/rails/.rvm/gems/ruby-2.2.1@global
+    RUBY_VERSION: ruby-2.2.1
+
+- name: Clone helpy
+  become_user: rails
+  git: 
+    repo: https://github.com/helpyio/helpy.git 
+    dest: /home/rails/helpy
+
+- name: Bundle install 
+  become_user: rails
+  command: bundle install
+  environment:
+    GEM_HOME: /home/rails/.rvm/gems/ruby-2.2.1
+    IRBRC: /home/rails/.rvm/rubies/ruby-2.2.1/.irbrc
+    MY_RUBY_HOME: /home/rails/.rvm/rubies/ruby-2.2.1
+    PATH: /home/rails/.rvm/gems/ruby-2.2.1/bin:/home/rails/.rvm/gems/ruby-2.2.1@global/bin:/home/rails/.rvm/rubies/ruby-2.2.1/bin:/home/rails/.rvm/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
+    GEM_PATH: /home/rails/.rvm/gems/ruby-2.2.1:/home/rails/.rvm/gems/ruby-2.2.1@global
+    RUBY_VERSION: ruby-2.2.1
+  args:
+    chdir: /home/rails/helpy
+  
+- name: Copy database.yml
+  become_user: rails
+  template: 
+    src: database.yml.j2
+    dest: /home/rails/helpy/config/database.yml
+    
+- name: Generate secret key
+  become_user: rails
+  command: rake secret
+  environment:
+    GEM_HOME: /home/rails/.rvm/gems/ruby-2.2.1
+    IRBRC: /home/rails/.rvm/rubies/ruby-2.2.1/.irbrc
+    MY_RUBY_HOME: /home/rails/.rvm/rubies/ruby-2.2.1
+    PATH: /home/rails/.rvm/gems/ruby-2.2.1/bin:/home/rails/.rvm/gems/ruby-2.2.1@global/bin:/home/rails/.rvm/rubies/ruby-2.2.1/bin:/home/rails/.rvm/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games
+    GEM_PATH: /home/rails/.rvm/gems/ruby-2.2.1:/home/rails/.rvm/gems/ruby-2.2.1@global
+    RUBY_VERSION: ruby-2.2.1
+  args:
+    chdir: /home/rails/helpy
+  register: rake_secret 
+  when: secrets.stat.exists == false
+
+- name: Update config with new secret   
+  replace: 
+    dest: /home/rails/helpy/config/secrets.yml
+    regexp: <%= ENV\["SECRET_KEY_BASE"] %>
+    replace: "{{ rake_secret.stdout }}"
+  when: secrets.stat.exists == false
+  
+- name: Create production.log
+  file:
+    path: /home/rails/helpy/log/production.log
+    state: touch
+    group: rails
+    owner: rails
+    mode: 0664  
+    
+- name: Precompile Assets
+  become_user: rails
+  shell: RAILS_ENV=production rake assets:precompile
+  args:
+    executable: /bin/bash
+    chdir: /home/rails/helpy
+  environment:
+    GEM_HOME: /home/rails/.rvm/gems/ruby-2.2.1
+    IRBRC: /home/rails/.rvm/rubies/ruby-2.2.1/.irbrc
+    MY_RUBY_HOME: /home/rails/.rvm/rubies/ruby-2.2.1
+    PATH: /home/rails/.rvm/gems/ruby-2.2.1/bin:/home/rails/.rvm/gems/ruby-2.2.1@global/bin:/home/rails/.rvm/rubies/ruby-2.2.1/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/home/rails/.rvm/bin
+    LOGNAME: rails
+    GEM_PATH: /home/rails/.rvm/gems/ruby-2.2.1:/home/rails/.rvm/gems/ruby-2.2.1@global
+    RUBY_VERSION: ruby-2.2.1
+
+- name: Db setup
+  become_user: rails
+  shell: RAILS_ENV=production rake db:setup
+  args:
+    chdir: /home/rails/helpy
+    executable: /bin/bash
+  environment:
+    GEM_HOME: /home/rails/.rvm/gems/ruby-2.2.1
+    IRBRC: /home/rails/.rvm/rubies/ruby-2.2.1/.irbrc
+    MY_RUBY_HOME: /home/rails/.rvm/rubies/ruby-2.2.1
+    PATH: /home/rails/.rvm/gems/ruby-2.2.1/bin:/home/rails/.rvm/gems/ruby-2.2.1@global/bin:/home/rails/.rvm/rubies/ruby-2.2.1/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/home/rails/.rvm/bin
+    GEM_PATH: /home/rails/.rvm/gems/ruby-2.2.1:/home/rails/.rvm/gems/ruby-2.2.1@global
+    RUBY_VERSION: ruby-2.2.1

@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  author: Antoine CAVARD
+  description: Helpy role
+  license: MIT
+  min_ansible_version: 2.3
+  platforms:
+  - name: Debian
+    versions:
+      - jessie
+  galaxy_tags:
+    - helpy
+    - helpdesk
+    - support
+    - tickets
+    - ticket
+    - ruby
+dependencies: []

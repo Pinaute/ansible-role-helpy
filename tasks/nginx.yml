@@ -1,0 +1,35 @@
+---
+- name: Add passenger configuration 
+  blockinfile:
+    dest: "/etc/nginx/nginx.conf"
+    insertafter: "http {"
+    block: |
+      passenger_root {{ passenger.root }};
+      passenger_ruby {{ passenger.ruby }};
+      
+- name: Create ssl directory    
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+
+- name: Ensure provided SSL certs have been deployed
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - src: "{{ nginx.ssl_key_file }}"
+      dest: "{{ nginx.ssl_key_path }}"
+    - src: "{{ nginx.ssl_cert_file }}"
+      dest: "{{ nginx.ssl_cert_path }}"
+  notify: Reload the Nginx service  
+    
+- name: Deploy Nginx configuration
+  template:
+    src: helpy.conf.j2
+    dest: /etc/nginx/conf.d/helpy.conf
+  notify: Reload the Nginx service
+
+- name: Ensure the Nginx service is running
+  service:
+   name: nginx
+   state: started
